@@ -115,3 +115,12 @@ client.on('messageCreate', async (message) => {
 
 // Login to Discord
 client.login(process.env.DISCORD_BOT_TOKEN);
+
+// Add this to prevent bot from binding to a port, to keep Render Web Service free
+// At the end of your bot file, add a simple health check server
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => res.send('Bot is running!'));
+app.listen(PORT, () => console.log(`Health check server on port ${PORT}`));
