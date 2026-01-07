@@ -35,34 +35,43 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
   if (!oldState.channel && newState.channel) {
     const embed = new EmbedBuilder()
       .setTitle('🔊 Voice Channel Join')
-      .setDescription(`${member} joined **${newState.channel.name}**`)
+      .setDescription(`${member.displayName} joined "${newState.channel.name}"`)
       .setColor(0x00FF00)
       .setThumbnail(member.displayAvatarURL())
       .setTimestamp();
 
-    await notificationChannel.send({ embeds: [embed] });
+    await notificationChannel.send({
+      content: `🔊 ${member.displayName} joined "${newState.channel.name}"`,
+      embeds: [embed]
+    });
   }
   // Someone left a voice channel
   else if (oldState.channel && !newState.channel) {
     const embed = new EmbedBuilder()
       .setTitle('🔇 Voice Channel Leave')
-      .setDescription(`${member} left **${oldState.channel.name}**`)
+      .setDescription(`${member.displayName} left "${oldState.channel.name}"`)
       .setColor(0xFF0000)
       .setThumbnail(member.displayAvatarURL())
       .setTimestamp();
 
-    await notificationChannel.send({ embeds: [embed] });
+    await notificationChannel.send({
+      content: `🔇 ${member.displayName} left "${oldState.channel.name}"`,
+      embeds: [embed]
+    });
   }
   // Someone moved between voice channels
   else if (oldState.channel && newState.channel && oldState.channel.id !== newState.channel.id) {
     const embed = new EmbedBuilder()
       .setTitle('🔄 Voice Channel Move')
-      .setDescription(`${member} moved from **${oldState.channel.name}** to **${newState.channel.name}**`)
+      .setDescription(`${member.displayName} moved from "${oldState.channel.name}" to "${newState.channel.name}"`)
       .setColor(0x0099FF)
       .setThumbnail(member.displayAvatarURL())
       .setTimestamp();
 
-    await notificationChannel.send({ embeds: [embed] });
+    await notificationChannel.send({
+      content: `🔄 ${member.displayName} moved from "${oldState.channel.name}" to "${newState.channel.name}"`,
+      embeds: [embed]
+    });
   }
 });
 
