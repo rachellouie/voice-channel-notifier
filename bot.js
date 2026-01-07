@@ -1,6 +1,32 @@
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
+
+// Path to config file
+const configPath = path.join(__dirname, 'config.json');
+
+// Load or create config
+let config = { notificationChannels: {} };
+if (fs.existsSync(configPath)) {
+  try {
+    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    console.log('Loaded config from file');
+  } catch (error) {
+    console.error('Error loading config:', error);
+  }
+}
+
+// Function to save config
+function saveConfig() {
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    console.log('Config saved');
+  } catch (error) {
+    console.error('Error saving config:', error);
+  }
+}
 
 // Create client with necessary intents
 const client = new Client({
@@ -12,9 +38,6 @@ const client = new Client({
   ]
 });
 
-// Store notification channel IDs per guild
-const notificationChannels = new Map();
-
 client.once('clientReady', () => {
   console.log(`${client.user.tag} has connected to Discord!`);
   console.log(`Bot is in ${client.guilds.cache.size} guild(s)`);
@@ -25,7 +48,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
   const guild = newState.guild;
 
   // Get notification channel for this guild
-  const channelId = notificationChannels.get(guild.id);
+  const channelId = config.notificationChannels[guild.id];
   if (!channelId) return;
 
   const notificationChannel = guild.channels.cache.get(channelId);
@@ -76,8 +99,8 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 });
 
 client.on('messageCreate', async (message) => {
-  // Ignore bot messages
-  if (message.author.bot) return;
+  // Ignore bot messages and DMs
+  if (message.author.bot || !message.guild) return;
 
   // Set notification channel command
   if (message.content === '!setchannel') {
@@ -86,13 +109,14 @@ client.on('messageCreate', async (message) => {
       return message.reply('❌ You need Administrator permission to use this command.');
     }
 
-    notificationChannels.set(message.guild.id, message.channel.id);
-    await message.reply(`✅ Notification channel set to ${message.channel}`);
+    config.notificationChannels[message.guild.id] = message.channel.id;
+    saveConfig();
+    return message.reply(`✅ Notification channel set to ${message.channel} and saved!`);
   }
 
   // Test notification command
   if (message.content === '!testnotif') {
-    const channelId = notificationChannels.get(message.guild.id);
+    const channelId = config.notificationChannels[message.guild.id];
 
     if (!channelId) {
       return message.reply('❌ No notification channel set. Use !setchannel first.');
@@ -101,9 +125,9 @@ client.on('messageCreate', async (message) => {
     const channel = message.guild.channels.cache.get(channelId);
     if (channel) {
       await channel.send('✅ Test notification - Bot is working!');
-      await message.reply('Test notification sent!');
+      return message.reply('Test notification sent!');
     } else {
-      await message.reply('❌ Could not find notification channel.');
+      return message.reply('❌ Could not find notification channel.');
     }
   }
 
@@ -119,7 +143,7 @@ client.on('messageCreate', async (message) => {
       )
       .setColor(0x0099FF);
 
-    await message.reply({ embeds: [embed] });
+    return message.reply({ embeds: [embed] });
   }
 });
 
@@ -127,7 +151,6 @@ client.on('messageCreate', async (message) => {
 client.login(process.env.DISCORD_BOT_TOKEN);
 
 // Health check server for Render.com
-// This is to keep Render Web Service free
 const app = express();
 const PORT = process.env.PORT || 3000;
 
