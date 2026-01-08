@@ -51,10 +51,6 @@ client.on(Events.Warn, (info) => {
   console.warn('Discord client warning:', info);
 });
 
-client.on(Events.Debug, (info) => {
-  console.log('Discord debug:', info);
-});
-
 client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
   const member = newState.member;
   const guild = newState.guild;
@@ -170,18 +166,6 @@ client.on(Events.MessageCreate, async (message) => {
   }
 });
 
-// Login to Discord
-console.log('Attempting to login to Discord...');
-console.log('Token exists:', !!process.env.DISCORD_BOT_TOKEN);
-console.log('Token length:', process.env.DISCORD_BOT_TOKEN ? process.env.DISCORD_BOT_TOKEN.length : 0);
-
-client.login(process.env.DISCORD_BOT_TOKEN)
-  .then(() => console.log('Login successful'))
-  .catch(error => {
-    console.error('Failed to login to Discord:', error);
-    process.exit(1);
-  });
-
 // Health check server for Render.com
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -194,10 +178,24 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
     uptime: process.uptime(),
-    guilds: client.guilds.cache.size
+    guilds: client.guilds.cache.size,
+    wsStatus: client.ws.status
   });
 });
 
 app.listen(PORT, () => {
   console.log(`Health check server running on port ${PORT}`);
 });
+
+// Login to Discord AFTER Express server starts
+console.log('Attempting to login to Discord...');
+console.log('Token exists:', !!process.env.DISCORD_BOT_TOKEN);
+console.log('Token length:', process.env.DISCORD_BOT_TOKEN ? process.env.DISCORD_BOT_TOKEN.length : 0);
+
+client.login(process.env.DISCORD_BOT_TOKEN)
+  .then(() => console.log('Login successful'))
+  .catch(error => {
+    console.error('Failed to login to Discord:', error);
+    process.exit(1);
+  });
+  
