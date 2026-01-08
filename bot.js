@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, PermissionFlagsBits, Events } = require('discord.js');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -38,12 +38,24 @@ const client = new Client({
   ]
 });
 
-client.once('clientReady', () => {
-  console.log(`${client.user.tag} has connected to Discord!`);
-  console.log(`Bot is in ${client.guilds.cache.size} guild(s)`);
+client.once(Events.ClientReady, (readyClient) => {
+  console.log(`${readyClient.user.tag} has connected to Discord!`);
+  console.log(`Bot is in ${readyClient.guilds.cache.size} guild(s)`);
 });
 
-client.on('voiceStateUpdate', async (oldState, newState) => {
+client.on(Events.Error, (error) => {
+  console.error('Discord client error:', error);
+});
+
+client.on(Events.Warn, (info) => {
+  console.warn('Discord client warning:', info);
+});
+
+client.on(Events.Debug, (info) => {
+  console.log('Discord debug:', info);
+});
+
+client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
   const member = newState.member;
   const guild = newState.guild;
 
@@ -98,7 +110,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
   }
 });
 
-client.on('messageCreate', async (message) => {
+client.on(Events.MessageCreate, async (message) => {
   // Ignore bot messages and DMs
   if (message.author.bot || !message.guild) return;
 
@@ -148,7 +160,16 @@ client.on('messageCreate', async (message) => {
 });
 
 // Login to Discord
-client.login(process.env.DISCORD_BOT_TOKEN);
+console.log('Attempting to login to Discord...');
+console.log('Token exists:', !!process.env.DISCORD_BOT_TOKEN);
+console.log('Token length:', process.env.DISCORD_BOT_TOKEN ? process.env.DISCORD_BOT_TOKEN.length : 0);
+
+client.login(process.env.DISCORD_BOT_TOKEN)
+  .then(() => console.log('Login successful'))
+  .catch(error => {
+    console.error('Failed to login to Discord:', error);
+    process.exit(1);
+  });
 
 // Health check server for Render.com
 const app = express();
