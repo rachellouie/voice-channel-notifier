@@ -114,16 +114,27 @@ client.on(Events.MessageCreate, async (message) => {
   // Ignore bot messages and DMs
   if (message.author.bot || !message.guild) return;
 
+  console.log(`Received message: "${message.content}" from ${message.author.tag} in ${message.guild.name}`);
+
   // Set notification channel command
   if (message.content === '!setchannel') {
+    console.log('Processing !setchannel command');
     // Check if user has administrator permission
     if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      console.log('User lacks admin permission');
       return message.reply('❌ You need Administrator permission to use this command.');
     }
 
     config.notificationChannels[message.guild.id] = message.channel.id;
     saveConfig();
-    return message.reply(`✅ Notification channel set to ${message.channel} and saved!`);
+    console.log('Attempting to send reply...');
+    try {
+      await message.reply(`✅ Notification channel set to ${message.channel} and saved!`);
+      console.log('Reply sent successfully');
+    } catch (error) {
+      console.error('Error sending reply:', error);
+    }
+    return;
   }
 
   // Test notification command
